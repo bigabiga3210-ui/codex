@@ -24,3 +24,55 @@
     "hash": "REQUIRED"
   }
 }
+param($CanonPath="C:\canon.v2.json")
+
+$LOG="C:\AUTONOMIC_NODE.log"
+function Log($m){
+ "$(Get-Date -f 'yyyy-MM-dd HH:mm:ss') | $m" |
+  Tee-Object -FilePath $LOG -Append
+}
+
+# ADMIN CHECK
+if (-not ([Security.Principal.WindowsPrincipal]
+ [Security.Principal.WindowsIdentity]::GetCurrent()
+ ).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+ Log "ADMIN REQUIRED. ABORT."
+ exit
+}
+
+$canon = Get-Content $CanonPath | ConvertFrom-Json
+Log "AUTONOMIC START"
+
+# === SERVICE INTEGRITY CHECK ===
+foreach($svc in $canon.integrity.services.PSObject.Properties){
+ $name = $svc.Name
+ $target = $svc.Value
+ $current = (Get-Service $name -ErrorAction SilentlyContinue).StartType
+
+ if($current -and $current.ToString().ToUpper() -ne $target){
+   Log "DRIFT DETECTED: $name ($current -> $target)"
+   try{
+     Stop-Service $name -Force -EA SilentlyContinue
+     Set-Service  $name -StartupType Disabled
+     Log "REPAIRED: $name"
+   } catch {
+     Log "REPAIR FAILED: $name"
+   }
+ }
+}
+
+# === REGISTRY INTEGRITY ===
+$menu = (Get-ItemProperty `
+ "HKCU:\Control Panel\Desktop" `
+ -Name MenuShowDelay `
+ -EA SilentlyContinue).MenuShowDelay
+
+if($menu -ne $canon.integrity.registry."HKCU.MenuShowDelay"){
+ Log "DRIFT REGISTRY: MenuShowDelay"
+ reg add "HKCU\Control Panel\Desktop" `
+   /v MenuShowDelay `
+   /d $canon.integrity.registry."HKCU.MenuShowDelay" /f | Out-Null
+ Log "REPAIRED REGISTRY"
+}
+
+Log "AUTONOMIC COMPLETE"

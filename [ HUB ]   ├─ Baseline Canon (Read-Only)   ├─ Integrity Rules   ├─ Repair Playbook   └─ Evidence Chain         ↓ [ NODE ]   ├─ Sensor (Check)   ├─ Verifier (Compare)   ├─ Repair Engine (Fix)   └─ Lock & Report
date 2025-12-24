@@ -1,0 +1,26 @@
+{
+  "authority": {
+    "owner": "ช่างเอ อ้วนซิ่ง",
+    "mode": "OWNER_AUTONOMIC",
+    "offline": true
+  },
+  "integrity": {
+    "services": {
+      "DiagTrack": "DISABLED",
+      "dmwappushservice": "DISABLED",
+      "RemoteRegistry": "DISABLED"
+    },
+    "registry": {
+      "HKCU.MenuShowDelay": "0"
+    }
+  },
+  "healing": {
+    "on_drift": "AUTO_REPAIR",
+    "on_fail": "ROLLBACK_AND_LOCK",
+    "max_retry": 1
+  },
+  "audit": {
+    "evidence": "REQUIRED",
+    "hash": "REQUIRED"
+  }
+}

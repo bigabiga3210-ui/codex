@@ -1,0 +1,20 @@
+$PrimaryCanon = @'
+{
+  "authority": { "owner": "ช่างเอ อ้วนซิ่ง", "offline": true },
+  "integrity": {
+    "services": {
+      "DiagTrack": "Disabled",
+      "dmwappushservice": "Disabled",
+      "RemoteRegistry": "Disabled"
+    },
+    "registry": {
+      "HKCU.MenuShowDelay": "0"
+    }
+  },
+  "healing": { "max_retry": 1 }
+}
+'@
+
+$PrimaryCanon | Out-File C:\canon.primary.json -Encoding UTF8 -Force
+Copy-Item C:\canon.primary.json C:\canon.recovery.json -Force
+attrib +R C:\canon.recovery.json

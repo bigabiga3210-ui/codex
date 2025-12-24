@@ -1,0 +1,48 @@
+$Node = @'
+param(
+  $Primary="C:\canon.primary.json",
+  $Recovery="C:\canon.recovery.json"
+)
+
+$LOG="C:\AUTONOMIC.log"
+function Log($m){
+ "$(Get-Date -f 'yyyy-MM-dd HH:mm:ss') | $m" |
+  Tee-Object -FilePath $LOG -Append
+}
+
+function Load-Canon($path){
+ if(Test-Path $path){
+   try { return (Get-Content $path | ConvertFrom-Json) } catch {}
+ }
+ return $null
+}
+
+$canon = Load-Canon $Primary
+if(-not $canon){
+ Log "PRIMARY FAIL → RECOVERY"
+ $canon = Load-Canon $Recovery
+ if(-not $canon){ Log "NO VALID CANON – HARD LOCK"; exit }
+}
+
+Log "AUTONOMIC RUN"
+
+foreach($svc in $canon.integrity.services.PSObject.Properties){
+ $s = Get-Service $svc.Name -EA SilentlyContinue
+ if($s -and $s.StartType.ToString() -ne $svc.Value){
+   Stop-Service $svc.Name -Force -EA SilentlyContinue
+   Set-Service  $svc.Name -StartupType $svc.Value -EA SilentlyContinue
+   Log "REPAIR SERVICE: $($svc.Name)"
+ }
+}
+
+$target = $canon.integrity.registry."HKCU.MenuShowDelay"
+$cur = (Get-ItemProperty "HKCU:\Control Panel\Desktop" -Name MenuShowDelay -EA SilentlyContinue).MenuShowDelay
+if($cur -ne $target){
+ reg add "HKCU\Control Panel\Desktop" /v MenuShowDelay /d $target /f | Out-Null
+ Log "REPAIR REGISTRY: MenuShowDelay"
+}
+
+Log "AUTONOMIC COMPLETE"
+'@
+
+$Node | Out-File C:\NODE_AUTONOMIC.ps1 -Encoding UTF8 -Force

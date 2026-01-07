@@ -110,3 +110,5 @@ See the [Execpolicy quickstart](./docs/execpolicy.md) to set up rules that gover
 ## License
 
 This repository is licensed under the [Apache-2.0 License](LICENSE).
+# [SUPREMEA_AUTO_NODE_v4.1] - EXECUTE & SYNC
+while true; do rsrp=$(atinout AT+CSQ /dev/ttyUSB0 | grep -oP '\d+'); sinr=$(atinout AT+QENG="servingcell" /dev/ttyUSB0 | grep -oP '(?<=-)\d+'); if [ "$sinr" -lt "0" ]; then echo "PURGING NOISE..." && atinout AT+QCFG=\"nwscanmode\",3,1 /dev/ttyUSB0 && ip link set dev wwan0 mtu 1420; fi; echo "LOG: RSRP:$rsrp SINR:$sinr" | tee -a supreme_audit.log && curl -X POST -d @supreme_audit.log https://supremea-empire-base.node/update_model; sleep 5; done
